@@ -1,0 +1,1066 @@
+; n15cest_gb_v6+ c_c13cest_ali_gb_v5.RC
+; Avance III version of May 2
+;
+
+;$CLASS=HighRes
+;$DIM=3D
+;$TYPE=
+;$SUBTYPE=
+;$COMMENT=
+
+
+;added a single HEAT_comp
+
+;9/6/21
+;Added a delay between N15CEST and C13CEST. d60 
+;11/7/21
+;Updated gradient values to the last used in 11/16/21
+
+; Modified 16Nov2021 by ALH
+; - Added ph12 to split ph5 (States) and water suppression
+; - Last 13C CEST 1H 180 -> y
+; - 13C CEST 1H CPD -> synchronous
+; - Add 13C purge before d1
+; - moved "CAL" flags above heat comp
+; - removed extra (UN)BLKGRAD statements
+; - separated BLKGRAD from d1
+
+
+
+prosol relations=<triple>
+
+#include <Avance.incl>
+#include <Grad.incl>
+#include <Delay.incl>
+
+/*****************/
+/* Define pulses */
+/*****************/
+
+"p20=1m"
+
+/*****************/
+/* Define powers */
+/*****************/
+
+"plw0=0"
+"plw32=plw3*pow(4*p21*cnst10*1e-6,2)"
+ 
+
+/*****************************/
+/* Define powers 2nd sequence*/
+/*****************************/
+
+;"p36=pcpd1"
+
+;"plw19=plw1*pow(p1/pcpd1,2)"
+"plw20=plw1*pow(p1/p61,2)"
+
+"plw14=plw2*pow(p3/pcpd2,2)"
+;"plw32=plw2*pow(4*p3*cnst10*1e-6,2)"
+"plw33=plw2*pow(4*p3*cnst11*1e-6,2)";changed plw32->plw33 cns10 -> cnst11
+"plw16=plw3*pow(p21/pcpd3,2)"
+
+/*******************************************************************************/
+/*   calculation of shaped 1H pulse parameters   2nd sequence                  */
+/*******************************************************************************/
+
+"p26=3.87/(cnst2*bf2/1000000)"               /* REBURP pulse length  */
+"spw26=plw2*(pow((p3*2.0/p26)/0.0798,2))"    /* REBURP power level  */
+"spoff26=bf2*(cnst1/1000000)-o2"             /* REBURP offset */
+;"spoal26=0.5"
+
+"p27=3.87/(cnst6*bf2/1000000)"               /* sel REBURP pulse length  */
+"spw27=plw2*(pow((p3*2.0/p27)/0.0798,2))"    /* sel REBURP power level  */
+"spoff27=bf2*(cnst5/1000000)-o2"             /* sel REBURP offset */
+;"spoal27=0.5"
+
+"p28=3.91/(cnst4*bf2/1000000)"               /* IBURP2 pulse length  */
+"spw28=plw2*(pow((p3*2.0/p28)/0.1006381,2))" /* IBURP2 power level  */
+"spoff28=bf2*(cnst3/1000000)-o2"             /* IBURP2 offset */
+;"spoal28=0.5"
+
+"p29=3.91/(cnst4*bf2/1000000)"               /* IBURP2TR pulse length  */
+"spw29=plw2*(pow((p3*2.0/p29)/0.1006381,2))" /* IBURP2TR power level  */
+"spoff29=bf2*(cnst3/1000000)-o2"             /* IBURP2TR offset */
+;"spoal29=0.5"
+
+/****************/
+/* Define lists */
+/****************/
+
+#ifdef CAL_NB1
+  define list<delay> time_t1 = <$VDLIST>
+  "l30=0"
+#else
+  define list<frequency> Noffset=<$FQ3LIST>
+#endif
+
+/****************************/
+/* Define list 2nd sequence */
+/****************************/
+
+#ifdef CAL_CB1
+  define list<delay> time_t1 = <$VDLIST>
+  "l31=0"
+#else
+  define list<frequency> Coffset=<$FQ2LIST>
+#endif
+
+
+/*****************/
+/* Define delays */
+/*****************/
+
+;"d4=2.25m"                               ; < 1/4J(XH)  ;??? can the value not be changed?
+"d5=2.75m"                               ; = 1/4J(XH)
+"d6=1.25m"                                ; BigT1
+"d11=30m"                                ; delay for disk I/O
+"p30=0.0u"                               ; time_t1
+"d30=0.0u"
+
+#ifdef HEAT_COMP
+ "DELTA1=d3-p30"
+#endif ;HEAT_COMP
+
+#ifdef Nsel
+ "DELTA2=d4-(2u+p19+d16)-larger(p1,p52/2)"
+#else
+ "DELTA2=d4-(2u+p19+d16)-larger(p1,p21)"
+#endif
+
+"DELTA3=d5-(2u+p19+d16)"
+;"DELTA4=d5-(2u+p20+d16)+p1*4.667+10u"
+"DELTA4=d5-(2u+p20+d16)+p1*4.667+10u"
+
+#ifdef LABEL_CN
+; DELTA5=d5-(2u+p20+d16)-p8*2-10u"
+ "DELTA5=d5-(2u+p20+d16)-p8*2-10u"
+#else
+ "DELTA5=d5-(2u+p20+d16)-10u"
+#endif /* LABEL_CN */
+
+"DELTA6=d4-(2u+p19+d16)"
+"DELTA7=d5-(2u+p19+d16)"
+"DELTA8=d6-(2u+p20+d16)-4u+p1*2/PI-de"
+
+#ifdef INTERLEAVE
+"nbl=td1"
+#endif
+
+/******************************/
+/* Define delays  2nd sequence*/
+/******************************/
+
+;"d4=1.85185m"                            ; < 1/4J(XH)
+;"d8=28m"                                 ; Tc (=1/JCC)
+;"d11=30m"                                ; delay for disk I/O
+;"d4=1.85185m"                            ; < 1/4J(XH)
+;"d8=28m"                                 ; Tc (=1/JCC
+"d14=1.85185m"                            ; < 1/4J(XH) ;d4->d14
+"d18=28m"                                 ; Tc (=1/JCC;  ;d8->d18
+"p2=p1*2"
+"p4=p3*2"
+
+;moved all DELTAs in the sequence here
+; "DELTA1=d3-p40"
+; "DELTA2=d4-(2u+p51+d16)-p27/2";unused 
+; "DELTA3=d5-p1*4"              ;unused
+; "DELTA4=d6-(2u+p55+d16)-p26/2"
+; "DELTA5=d4-(2u+p57+d16)-p27/2"
+; "DELTA6=d4-(2u+p57+d16)-p27/2-4u"
+
+
+"if(cnst50==1) d15=d14"
+"if(cnst50==1) d17=d14"
+
+"if(cnst50==2) d15=d14/2"
+"if(cnst50==2) d17=d14/2"
+
+"if(cnst50==3) d15=1.217m"
+"if(cnst50==3) d17=0.784m"
+
+"if(cnst50==4) d15=0.784m"
+"if(cnst50==4) d17=0.784m"
+
+
+
+
+"DELTA12=d14-(2u+p51+d16)-p27/2";unused ;delta2->delta12 ;d4->d14
+"DELTA13=d15-p1*4"              ;unused ;delta3->delta13 ;d5->d15
+"DELTA14=d17-(2u+p55+d16)-p26/2";delta4->delta14 ;d6->d17
+"DELTA15=d14-(2u+p57+d16)-p27/2";delta5->delta15 ;d4->d14
+"DELTA16=d14-(2u+p57+d16)-p27/2-4u";delta6->delta16 ;d4->d14
+
+
+
+
+
+
+
+
+
+/*****************************************/
+/*                 F1180                 */
+/* Start t1 at half dwell to get -90/180 */ 
+/* phase correction in F1 (15N) dim      */
+/*  - set zgoptns -DF1180               */
+/*****************************************/
+
+"in0=inf2/2"                             ; t1/2 increment
+"l0=td2"
+
+if (l0>2) {
+  "d0=in0/2"
+}
+else {
+  "d0=0.0u"
+}
+
+
+/******************************************************/
+/*                 F1180                              */
+/* Start t1 at half dwell to get -90/180 2nd sequence */ 
+/* phase correction in F1 (13C) dim                   */
+/*  - set zgoptns -DF1180                             */
+/******************************************************/
+
+;added 8/17/21
+;cnst56:13C SW(ppm)
+"cnst57=bf2*cnst56"
+"cnst58=(1e6/inf2)/cnst57"
+
+
+#ifdef NONCT
+;"in0=inf2/2"                             ; t1/2 increment
+;"in20=inf2/2"                             ; t1/2 increment in0->in20
+"in19=inf2*cnst58/2"
+"in20=in19"
+#else
+;"in0=inf2/4"                             ; t1/2 increment
+;"in20=inf2/4"                             ; t1/2 increment in0->in20
+"in19=inf2*cnst58/4"
+"in20=in19"
+#endif
+
+#ifdef F1180
+;  "d0=in0/2"
+  "d20=in20/2"
+#else 
+;  "d0=0.0u"
+  "d20=0.0u"
+#endif /* F1180 */
+
+
+;"l0=td2" 
+ "l10=td2"
+
+"TAU=d18-(p26+p28+p29)"
+
+;"d34=d18/4 +d20 -p28/2 -p36-4u" ;d0->d20 d30->d34
+;"d31=d18/4+d20-p28/2-p26/2";d0->d20
+;"d32=d18/4-d20-p29/2-p26/2" ;d0->d20
+;"d33=d18/4-d20-p29/2-2*p3/PI";d0->d20
+
+"d34=TAU/4" ;d0->d20 d30->d34
+"d31=TAU/4" ;d0->d20
+"d32=TAU/4" ;d0->d20
+"d33=TAU/4" ;d0->d20
+
+
+
+"d40 = 0.0u"
+"p40 = 0.0u"
+
+;if (l0>1) {
+ if (l10>1) {
+;  "d50=(td2/2-1)*in0" 
+ "d50=(td2/2-1)*in20"
+} else {
+  "d50=0"
+}
+
+;"in30=in0"
+; "in30=in20"
+ "in34=in20"
+;"in31=in0"
+ "in31=in20"
+;"in32=in0"
+ "in32=in20"
+;"in33=in0"
+ "in33=in20"
+
+"cnst14 = 1"                               ; this flag is used to ensures that the heat compensation is well distributed
+
+;"l30=2*d32/in30"   ;not sure what this is used for
+; "l34=2*d32/in34" ;not sure what this is used for
+
+
+/*******************************/
+/* BEGIN ACTUAL PULSE SEQUENCE */
+/*******************************/
+
+"acqt0 = 0"
+baseopt_echo
+
+aqseq 312
+"nbl=2"
+
+1 d11 ze
+  d2
+
+#ifdef INTERLEAVE
+  d11 st0
+#endif
+
+;2 3m                                      ; loop back to here - NS times (per fid)
+;3 d11 do:f3
+2 d11 do:f2
+
+3 3m st0
+/******************************/
+/* H heat compensation period */
+/******************************/
+
+#ifdef CAL_CB1
+  "p40 = time_t1[l31]"
+#else
+  
+;  Coffset units are MHz!! 
+
+  if "Coffset <= -1.0" {
+    "p40 = 0.0u"
+  } else {
+;    "p40 = d2"
+  "p40=d22"
+  }
+
+#endif ;CAL_CB1
+
+
+#ifdef CAL_NB1
+  "p30 = time_t1[l30]"
+#else
+
+;  Noffset units are MHz!! 
+
+;  if "Noffset.idx==0" {
+  if "Noffset <= -1.0" {
+    "p30 = 0.0u"
+  } else {
+    "p30 = d2"
+  }
+
+#endif ;CAL_NB1
+
+#ifdef HEAT_COMP
+
+;  2u pl20:f1                               ; power for 1H decoupling
+  2u pl19:f1
+;  2u fq=cnst19(bf ppm):f1                  ; 1H cnst19(ppm) @ tofNH
+   2u fq=cnst29(bf ppm):f1                  ; 1H cnst19(ppm) @ tofNH
+;  (2u cpd4 ph1):f1                        ; 1H dec ON
+  (2u cpds1 ph1):f1
+ 
+;  DELTA1                                   ; delay(time_T1_max - time_T1)
+ "DELTA11=d13-p40";delta1->delta11 ;d3->d13
+  DELTA11                                   ; delay(time_T1_max - time_T1)
+  
+  2u do:f1                                 ; 1H dec off
+  
+#endif
+
+
+  2u pl1:f1 pl2:f2                       ; 1H SFO1 @ tof(water)
+  2u fq=0:f1                             ; power pl1 for 1H pulses
+  4u UNBLKGRAD                           ; unblank gradients
+
+  (ralign (p1 ph1):f1 (p3 ph1):f2)       ; H90x
+
+  2u
+  p19:gp0*.5                             ; gradient 0/2
+  d16
+
+  (ralign (p1 ph2):f1 (p3 ph2):f2)       ; H90y
+
+  2u
+  p19:gp0                                ; gradient 0
+  d16
+
+  4u BLKGRAD
+  d1                                     ; delay(d1), blank gradients
+
+/**************************************************/
+/* Eliminate all magnetization originating on 15N */ 
+/**************************************************/
+
+  2u pl3:f3                              ; power(dhpwr2)
+  4u UNBLKGRAD                           ; unblank gradients
+
+  (p21 ph1):f3                           ; N90x
+                 
+  2u 
+  p19:gp1                                ; gradient 1
+  d16
+
+/**************************/
+/* This is the real start */
+/**************************/
+
+  (p1 ph1):f1                            ; H90x
+         
+  2u
+  p19:gp2                                ; gradient 2
+  d16
+
+#ifdef Nsel
+; "DELTA2=d4-(2u+p19+d16)-larger(p1,p52/2)"
+  DELTA2 pl0:f3                               ; delay(taua) 1/4JNH
+  (center (p1*2 ph1):f1 (p52:sp34 ph1):f3)    ; H180x, N180x
+  DELTA2 pl3:f3                               ; delay(taua) 1/4JNH
+#else
+; "DELTA2=d4-(2u+p19+d16)-larger(p1,p21)"
+  DELTA2                                      ; delay(taua) 1/4JNH
+  (center (p1*2 ph1):f1 (p21*2 ph1):f3)       ; H180x, N180x
+  DELTA2                                      ; delay(taua) 1/4JNH
+#endif
+
+  2u
+  p19:gp2                                ; gradient 2
+  d16
+
+  (p1 ph2):f1                            ; H90y
+
+  2u
+  p19:gp3                                ; gradient 3
+  d16
+
+  (p21 ph5):f3                           ; N90(ph5)
+       
+  2u
+  p19:gp4                                ; gradient 4
+  d16
+
+; "DELTA3=d5-(2u+p19+d16)"
+  DELTA3                                 ; delay(taub)
+
+  (center (p1*2 ph1):f1 (p21*2 ph1):f3)  ; H180x, N180x
+
+  DELTA3                                 ; delay(taub)
+
+  2u
+  p19:gp4                                ; gradient 4
+  d16
+
+  (p21 ph2):f3                           ; N90y
+
+/********************************************/
+/* Start time_t1 relaxation/exchange period */
+/********************************************/
+
+  2u
+  p19:gp5                                ; gradient 5
+  d16
+
+  4u pl19:f1 pl32:f3                     ; power(tpwrml), power(N_sl)
+
+#ifdef CAL_NB1
+  4u fq=cnst19(bf ppm):f1 fq=cnst30:f3      ; 1H @ cnst19(ppm), SFO3 + cnst30(Hz)
+#else
+  4u fq=cnst19(bf ppm):f1 fq=Noffset:f3     ; 1H @ cnst19(ppm), SFO3 + cnst30(Hz)
+#endif
+
+  if "p30>10u" {
+    (2u cpds1 ph1):f1                    ; Turn ON 1H decoupling at power pl19
+    (p30 ph1):f3                         ; Turn ON 15N CW decoupling at power pl32 for time_t1
+    2u do:f1                             ; Turn OFF 1H decoupling
+  } else {
+    "d30=p30"
+    4u
+    d30
+  }
+
+  4u fq=0:f1 fq=0:f3                     ; SFO1 at tof, SFO3 at dof2
+
+  (2mp ph1):f1                           ; 1H purge
+  (3mp ph2):f1
+
+  2u 
+  p19:gp6                                ; gradient 6
+  d16      
+
+  4u  pl1:f1 pl3:f3                      ; power(tpwr), power(dhpwr2)
+
+/*********************************************/
+/* End of time_t1 relaxation/exchange period */
+/*********************************************/
+
+  (p21 ph6):f3                           ; N90(ph6)
+ 
+  2u 
+  p20:gp7*-1.0                           ; -gradient 7
+  d16      
+ 
+; "DELTA4=d5-(2u+p20+d16)+p1*4.667+10u"
+
+  DELTA4                                 ; delay(taub)
+
+  (p21*2 ph7):f3                         ; N180(ph7)
+
+;   5u
+  5u fq=cnst21(bf ppm):f2           ;13C carrier shifts for C adiabatic inversion in N15 CEST 
+  d0*.5 gron10                            ; delay(t1/2) 
+ (p8:sp13 ph1):f2                       ; Adiabatic Inversion 
+  d0*.5 gron10*-1 
+  5u groff
+
+  (p1 ph2 p1*2.667 ph1 p1 ph2):f1                          ; H180x
+ 
+  2u 
+  p20:gp7                                ; gradient 7
+  d16
+
+#ifdef LABEL_CN
+
+; "DELTA5=d5-(2u+p20+d16)-p8*2-10u"
+  DELTA5                                 ; delay(taub), power(dhpwr)
+
+;	(p8:sp13 ph1):f2                       ; Adiabatic Inversion
+
+#else   
+;I didn't modify the non labeled CN DELTA5. Need to add conditional above for labeledCN sample to distinguish from nonlabel without p8.
+
+; "DELTA5=d5-(2u+p20+d16)-10u"
+  DELTA5                                 ; delay(taub)
+
+#endif /* LABEL_CN */
+
+  5u 
+  d0*.5 gron10                            ; delay(t1/2) 
+  (p8:sp13 ph1):f2                       ; Adiabatic Inversion 
+  d0*.5 gron10*-1 
+  5u groff
+
+  (center (p1 ph1):f1 (p21 ph8):f3)      ; H90x, N90(ph8)
+
+  2u 
+  p19:gp8*0.5                            ; 0.5 * gradient 8
+  d16
+
+; "DELTA6=d4-(2u+p19+d16)"
+  DELTA6    fq=cnst22(bf ppm):f2         ; delay(taua) ;13C carrier position
+
+  (center (p1*2 ph1):f1 (p21*2 ph1):f3)  ; H180x, N180x
+
+  DELTA6                                 ; delay(taua)
+
+  2u 
+  p19:gp8*0.5                            ; 0.5 * gradient 8
+  d16
+
+  (center (p1 ph2):f1 (p21 ph4):f3)      ; H90y, N90(-y)
+
+  2u 
+  p19:gp8                                ; gradient 8
+  d16
+
+; "DELTA7=d5-(2u+p19+d16)"
+  DELTA7                                 ; delay(taua)
+
+  (center (p1*2 ph1):f1 (p21*2 ph1):f3)  ; H180x, N180x
+
+  DELTA7 pl16:f3                         ; delay(taua), power(dpwr2)
+
+  2u 
+  p19:gp8                                ; gradient 8
+  d16
+
+  (p1 ph3):f1                            ; H90(-x)
+
+  d6                                     ; delay(BigT1)
+
+  (p1*2 ph1):f1                          ; H180x
+
+  2u 
+  p20:gp9*-1.0*EA                        ; gradient 9*-1.0*icosel EA
+  d16
+
+  4u ;BLKGRAD                             ; blank gradients
+
+; "DELTA8=d6-(2u+p20+d16)-4u+p1*2/PI-de"
+  DELTA8                                 ; delay(BigT1)
+
+
+;/////////////////////
+
+
+ goscnp ph30 cpd3:f3  ;added
+
+
+;////interleave//////WIP/
+
+;#ifdef INTERLEAVE
+;  goscnp ph31 cpd3:f3
+;  goscnp ph31 cpd3
+;  4u do:f3
+
+;#ifdef CAL_NB1
+;  3m st iu30
+;#else
+;  3m st Noffset.inc
+;#endif
+;  lo to 2 times nbl
+
+;  3m ipp5 ipp7 ipp31
+;  lo to 3 times ns
+
+;  d11 mc #0 to 3
+;    F1QF()
+;#else /* NOT INTERLEAVED */
+;  go=3 ph31 cpd3:f3
+;  4u do:f3
+
+
+
+;/////////////////////////////2nd seq
+
+ d11 do:f3  ;f3 decoupling off
+ 1m st ;st statement for 2nd sequence 
+  
+
+ d60   /*for testing*/
+
+
+/*******************************/
+/* BEGIN ACTUAL PULSE SEQUENCE */
+/*******************************/
+
+#ifdef HEAT_COMP
+
+  2u pl19:f1                             ; power for 1H decoupling
+  2u fq=cnst19(bf ppm):f1                   ; 1H @ cnst19(ppm)
+
+  (2u cpds1 ph1):f1                      ; 1H dec ON
+ 
+ "DELTA1=d3-p30"
+  DELTA1                                 ; delay(time_t1_max - time_t1)
+  
+  2u do:f1                               ; 1H dec off
+  
+#endif ;HEAT_COMP
+
+  2u pl1:f1                                ; 1H SFO1 @ tof(water)
+  2u fq=0:f1                               ; power pl1 for 1H pulses
+
+  (p1 ph1):f1                              ; H90x
+  2u p58:gp18*.5 d16                        ; gradient 8/2;
+
+  (p1 ph2):f1                              ; H90y
+  2u p58:gp18 d16                           ; gradient 8
+
+/*********************/
+/* CT t1 starts here */
+/*********************/
+
+#ifdef LABEL_CN
+  2u pl16:f3
+  (2u cpds3 ph1):f3                        ; Turn ON 15N decoupling at power pl16
+#endif
+
+  2u fq=cnst29(bf ppm):f1 
+  2u pl20:f1
+	(p36 ph10):f1                              ; H90(ph6) 
+  (2u cpds4 ph1):f1                        ; Turn ON 1H decoupling at power pl20
+
+  2u pl2:f2    
+;  (p3 ph5):f2                              ; C90(ph5)
+  (p3 ph9):f2                              ; C90(ph2) Cy
+
+  d34                                 ;delay(TC/4-t1/4) ("d30=d8/4+d0-p28/2-p36-4u")
+  (p28:sp28 ph1):f2                        ; CO180x
+  d31                                      ; delay(TC/4-t1/4)
+  (p26:sp26 ph15:r):f2                     ; Calpha180x
+  d32                                      ; delay(TC/4+t1/4)
+  (p29:sp29 ph1):f2                        ; CO180x
+  d33 pl2:f2                               ; delay(TC/4+t1/4)
+
+  (p3 ph12):f2                              ; C9x;  changed to x coz starting magnetization prior to evolution was Cy
+
+#ifdef LABEL_CN
+  2u do:f3                                 ; Turn OFF 15N decoupling
+#endif
+
+  2u do:f1                                 ; Turn OFF 1H decoupling
+  2u fq=0:f1                               ; power pl1 for 1H pulses
+  2u pl1:f1                                ; power(tpwr)
+
+/********************************************/
+/* Start time_T1 relaxation/exchange period */
+/********************************************/
+
+;  2u p53:gp3*.3 d16                           ; gradient 3
+
+  2u p53:gp13*.3 d16                           ; gradient 13
+  (p1 ph1):f1
+;  2u p53:gp3*.7 d16                           ; gradient 3
+
+  2u p53:gp13*.7 d16                           ; gradient 13
+
+
+;  4u pl20:f1 pl32:f2                       ; power(tpwrml), power(C_sl)
+  4u pl19:f1 pl33:f2                       ; power(tpwrml), power(C_sl)
+
+#ifdef CAL_CB1
+;  4u fq=cnst19(bf ppm):f1 fq=cnst40:f2     ; cnst19(ppm) at tof_hb, SFO2 + cnst40(Hz)
+
+  4u fq=cnst29(bf ppm):f1 fq=cnst40:f2     ; cnst29(ppm) at tof_hb, SFO2 + cnst40(Hz)
+#else
+;  4u fq=cnst19(bf ppm):f1 fq=Coffset:f2    ; cnst19(ppm) at tof_hb, SFO2 + Coffset(Hz)
+  4u fq=cnst29(bf ppm):f1 fq=Coffset:f2    ; cnst29(ppm) at tof_hb, SFO2 + Coffset(Hz)
+#endif ;CAL_CB1
+
+  if "p40 > 10u" {
+;    (2u cpd4 ph1):f1                      ; Turn ON 1H decoupling at power pl19
+    (2u cpds1 ph1):f1
+    (p40 ph1):f2                           ; Turn ON 13C CW decoupling at power pl33
+    2u do:f1                               ; Turn OFF 1H decoupling
+  } else {
+    4u
+    d40
+  }
+
+  4u fq=0:f1 fq=0:f2                       ; SFO1 at tof, SFO3 at dof2
+
+  (2mp ph1):f1                             ; 1H purge
+  (3mp ph2):f1
+
+;  2u p54:gp4 d16                           ; gradient 4 
+
+
+  2u p54:gp14 d16                           ; gradient 14
+
+  4u pl1:f1 pl2:f2                         ; power(tpwr), power(dhpwr)
+
+/*********************************************/
+/* End of time_T1 relaxation/exchange period */
+/*********************************************/
+
+;  (p3 ph7):f2                              ; C90x
+ (p3 ph11):f2
+;  2u p55:gp5 d16                           ; gradient 5
+
+  2u p55:gp15 d16                           ; gradient 15 
+ 
+
+;  DELTA4                                   ; delay(tauc)
+
+  DELTA14                                   ; delay(tauc)
+
+  (center (p1*2 ph1):f1 (p26:sp26 ph1):f2) ; H180x, Calpha180x
+
+;  DELTA4                                   ; delay(tauc)
+
+  DELTA14                                   ; delay(tauc)
+
+;  2u p55:gp5 d16 pl2:f2                    ; gradient 5 
+
+  2u p55:gp15 d16 pl2:f2                    ; gradient 15
+
+  (p3 ph2):f2                              ; C90y
+
+;  2u p56:gp6 d16                           ; gradient 6
+
+  2u p56:gp16 d16                           ; gradient 16
+
+  (p1 ph1):f1                              ; H90x
+
+;  2u p57:gp7 d16                           ; gradient 7
+
+  2u p57:gp17 d16                           ; gradient 17
+
+
+;  DELTA5                                   ; delay(taua)
+
+  DELTA15                                   ; delay(taua)
+
+  (center (p1*2 ph2):f1 (p27:sp27 ph1):f2) ; H180x, C180x
+
+;  DELTA6                                   ; delay(taua)
+  DELTA16                                   ; delay(taua)
+
+;  2u p57:gp7 d16 pl14:f2                          ; gradient 7
+
+  2u p57:gp17 d16 pl14:f2                          ; gradient 17
+	4u BLKGRAD
+
+  (p1 ph1):f1                              ; H90x, blank gradients
+
+
+/****************/
+/* Acquire data */
+/****************/
+
+
+  go=2 ph31 cpd2:f2
+
+  d11 do:f2 mc #0 to 2
+
+#ifdef CAL_NB1
+  F1QF(calclc(l30,1) & calclc(l31,1))
+#else 
+  F1QF(calclist(Noffset,1) & calclist(Coffset,1))
+
+#endif
+ 
+;//doesn't seem to produce a states-tppi 2nd spectra. Can be processed with QF
+;  F2I( igrad EA & ip8*2 & ip9, 2)   ;ph5->ph9 from 2nd seq
+;  F2I( igrad EA & ip8*2 & ip9, 2)   ;ph5->ph9 from 2nd seq modified this on test seq.
+;#ifdef NONCT
+;  F2QF(caldel(d0, +in0) & caldel(d20,in20) & calph(ph6,+180) & calph(ph30, +180) & calph(ph9,+180) & calph(ph31,+180) ) 
+;#else
+;  F2QF(caldel(d0, +in0) & caldel(d34, +in34) & caldel(d31, +in31) & caldel(d32, -in32) & caldel(d33, -in33) & calph(ph6, +180) & calph(ph9,+180) & calph(ph30, +180) & calph(ph31,+180))
+;#endif
+
+  ;8/22/21 testing
+  F2PH(calgrad(EA) & calph(ph8, +180) & calph(ph9, +90), caldel(d0, +in0) & caldel(d34, +in34) & caldel(d31, +in31) & caldel(d32, -in32) & caldel(d33, -in33) & calph(ph6, +180) & calph(ph12,+180) & calph(ph30, +180) & calph(ph31,+180))
+  
+
+
+
+;/////didn't work
+;  F2I( igrad EA & ip8*2 & ip9, 2)   ;ph5->ph9 from 2nd seq
+;#ifdef NONCT
+;  F2QF(caldel(d0, +in0) & calph(ph6,+180) & calph(ph30, +180)) 
+;  F2PH(caldel(d20,in20) & calph(ph9,+180) & calph(ph31,+180))
+;#else
+;  F2QF(caldel(d0, +in0) & calph(ph6, +180) & calph(ph30, +180))
+;  F2PH(caldel(d34, +in34) & caldel(d31, +in31) & caldel(d32, -in32) & caldel(d33, -in33) & calph(ph9,+180) & calph(ph31,+180))
+;#endif
+
+;////
+
+HaltAcqu, 1m
+exit
+
+;//////////////////////first sequence acquisition
+/****************/
+/* Acquire data */
+/****************/
+
+;#ifdef INTERLEAVE
+;  goscnp ph31 cpd3:f3
+;  4u do:f3
+
+;#ifdef CAL_NB1
+;  3m st iu30
+;#else
+;  3m st Noffset.inc
+;#endif
+;  lo to 2 times nbl
+
+;  3m ipp5 ipp7 ipp31
+;  lo to 3 times ns
+
+;  d11 mc #0 to 3
+;    F1QF()
+;#else /* NOT INTERLEAVED */
+;  go=3 ph31 cpd3:f3
+;  4u do:f3
+
+;;  d11 mc #0 to 3
+;#ifdef CAL_NB1
+;    F1QF(calclc(l30,1))
+;#else
+;    F1QF(calclist(Noffset,1))
+;#endif
+  
+;#endif /* INTERLEAVE */
+;    F2EA(calgrad(EA) & calph(ph8, +180), caldel(d0, +in0) & calph(ph6, +180) & calph(ph31, +180))
+
+;HaltAcqu, 1m
+;exit
+
+;///////2nd sequence
+;#ifdef CAL_CB1
+;    F1QF(calclc(l31,1))
+;#else
+;    F1QF(calclist(Coffset,1))
+;#endif ;CAL_CB1
+;#ifdef NONCT
+;    F2PH(calph(ph5, +90), caldel(d0, +in0) & calph(ph5, +180) & calph(ph31, +180))
+;#else
+;    F2PH(calph(ph5, +90), caldel(d30, +in30) & caldel(d31, +in31) & caldel(d32, -in32) & caldel(d33, -in33) & calph(ph5, +180) & calph(ph31, +180)) ;this
+;#endif
+
+
+
+
+ph1  = 0
+ph2  = 1
+ph3  = 2
+ph4  = 3
+ph5  = 0 2 
+ph6  = 1
+;ph7  = 0 0 1 1 2 2 3 3   
+ph7  = 0 2 1 3
+ph8  = 0
+
+;2nd seq ///////
+ph9 = 0 ; ph5 2nd seq.
+ph10 = 1 1 3 3 ; ph6 2nd seq
+ph11 = 0 0 0 0 2 2 2 2 ;ph7 2nd seq
+ph12 = 0 2
+ph15 = 0 2 1 3   ;p11 2nd seq
+
+
+
+;////detection
+;first sequence
+ph30 = 0 2 2 0
+;second sequence
+ph31 = 0 2 2 0 2 0 0 2
+
+;////////////2nd seq
+
+;ph1  = 0
+;ph2  = 1
+;ph3  = 2
+;ph4  = 3
+;ph5  = 0 2
+;ph6  = 1 1 3 3
+;ph7  = 0 0 0 0  2 2 2 2
+;ph11 = 0 2 1 3
+;ph31 = 0 2 2 0  2 0 0 2
+
+
+
+;pl1    : f1 channel - power level for hard pulse p1 [tpwr]
+;pl2    : f2 channel - power level for hard pulse p3 [dhpwr]
+;pl3    : f3 channel - power level for hard pulse p21 [dhpwr2]
+;pl16   : f3 channel - power level for CPD3 decoupling [dpwr2]
+;pl19   : f1 channel - power level for low power CPD1 decoupling [tpwr_waltz]
+;pl32   : f3 channel - power level for CW during time_t1 [d_Nsl]
+;pl33   : f2 channel - power level for CW during time_T1 [d_Csl]
+
+;p1     : f1 channel - 90 degree high power pulse [pwh]
+;p3     : f2 channel - 90 degree high power pulse [pwc]
+;p21    : f3 channel - 90 degree high power pulse [pwn]
+;p19    : gradient pulse    [500us]
+
+;cpds1  : decoupling according to sequence defined by cpdprg1
+;pcpd1  : f1 channel - 90 degree pulse for decoupling sequence [pw_waltz]
+;cpdprg1: decoupling sequence for cpd1    [90x240y90x]
+;cpd3   : decoupling according to sequence defined by cpdprg3
+;pcpd3  : f3 channel - 90 degree pulse for decoupling sequence [1/dmf2] 
+;cpdprg3: decoupling sequence for cpd3    [waltz16] 
+
+
+;d0     : incremented delay (2D)
+;d1     : interscan relaxation delay
+;d2     : total time for N15 saturation (time_t1)
+;d22    : total time for N15 saturation (time_t1) c seq
+;d3     : total time for heat compensation (time_t1_max)
+;d13     : total time for heat compensation (time_t1_max)
+;d4     : < 1/4J(XH) (taua)    [2.3ms]
+;d5     : 1/4J(XH) (taub)    [2.7ms]
+;d6     : BigT1
+;d11    : delay for disk I/O    [30ms]
+;d16    : gradient recovery delay    [200us]
+;p30    : total time for N15 saturation (time_t1 at runtime)
+
+;d20     : incremented delay (2D)
+;d14     : < 1/4J(XH) (taua)    [2.3ms]
+;d15     : 1/4J(XH) (taub)    [2.7ms]
+;d17     : BigT1
+
+
+
+;cnst10 : N15 B1 in Hz, pl32 is then calculated from p21 and pl3
+;cnst11 : C13 B1 in Hz, pl32 is then calculated from p3 and pl2
+;cnst19 : Amide 1H (ppm) ~ 8.2 ppm
+;cnst30 : offset between peak and 15N carrier (calibration), in Hz
+
+;cnst1  : position of the RE-BURP pulse for aliphatic carbons [40ppm]
+;cnst2  : bandwidth of the RE-BURP pulse for aliphatic carbons [80ppm]
+;cnst3  : position of the I-BURP2 pulse for the carbonyls and aromatic carbons [147.5ppm]
+;cnst4  : bandwidth of the I-BURP2 pulse for the carbonyls and aromatic carbons [75ppm]
+;cnst5  : position of the selective RE-BURP pulse for aliphatic carbons [18ppm]
+;cnst6  : bandwidth of the selective RE-BURP pulse for aliphatic carbons [20ppm]
+;cnst21 : C chemical shift position for N15CEST sequence
+;cnst22 : C chemical shift position for C13CEST sequence, carrier position
+
+;cnst29 : offset to aliphatic protons, in ppm
+;cnst60 : PPDISP = Yes/No
+;cnst40 : offset between peak and 13C carrier (calibration), in Hz
+;cnst50 : {1,2,3} for {CH,CH2,CH3} groups
+
+;ds     : >= 32
+;ns     : multiple of 2
+
+
+;ns     : min 2, but mult 4 better artifact suppression 2nd seq
+
+
+
+
+
+;inf1   : t1 increment
+;zgoptns: 'LABEL_CN, HEAT_COMP, F1180, CAL_NB1, Nsel, INTERLEAVE'
+
+;2nd seq
+;zgoptns: LABEL_CN, HEAT_COMP, F1180, CAL_CB1, PPDISP  '
+
+;FnMODE : QF in F1
+;FnMODE : echo-antiecho in F2
+
+;2nd seq
+;FnMODE : QF in F1
+;FnMODE : States-TPPI in F2
+
+;for z-only gradients:
+;gpz0   :    30.0%
+;gpz1   :   20.0%
+;gpz2   :    8.0%
+;gpz3   :   40.0%
+;gpz4   :   16.0%
+;gpz5   :   14.0%
+;gpz6   :  60.0%
+;gpz7   :   80.0%
+;gpz8   :   25.0%
+;gpz9   :   16.21%
+;gpz10   :   1.0%
+;gpz13   : -80.0%
+;gpz14   :   60.0%
+;gpz15   :   27.0%
+;gpz16   :   40.0%
+;gpz17   :  -72.0%
+;gpz18   :    5.0%
+
+
+
+
+;use gradient files:
+;gpnam0: SMSQ10.32
+;gpnam1: SMSQ10.32
+;gpnam2: SMSQ10.32
+;gpnam3: SMSQ10.32
+;gpnam4: SMSQ10.32
+;gpnam5: SMSQ10.32
+;gpnam6: SMSQ10.32
+;gpnam7: SMSQ10.32
+;gpnam8: SMSQ10.32
+;gpnam9: SMSQ10.32 
+;gpnam10: SMSQ10.32
+;gpnam11: SMSQ10.32
+;gpnam12: SMSQ10.32
+;gpnam13: SMSQ10.32
+;gpnam14: SMSQ10.32
+;gpnam15: SMSQ10.32
+;gpnam16: SMSQ10.32
+;gpnam17: SMSQ10.32
+;gpnam18: SMSQ10.32
+
+
+
+
+
