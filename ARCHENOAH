@@ -3,7 +3,7 @@
 ;
 ;
 ;
-;
+;Physical Chemistry Chemical Physics, 2023, DOI: 10.1039/D3CP01580G
 ;Last update June 7th, 2023
 ;#####Setting up sequence#####
 
@@ -16,11 +16,11 @@
 ;Fill any other required selective pulses manually (likely reburp and iburp pulses). Powers should be calculated automatically.
 ;
 ;Look in https://github.com/RCabreraAllpas/Pulse-sequences to download
-;any missing selective pulses if needed (likely iburp2tr.1000) and missing cpd programs (p5m4sp180.p31, waltz64.p61,p5m4sp180.p62). Set them up in the ARCHE-NOAH experiment.
+;any missing selective pulses if needed (iburp2tr.1000) and missing cpd programs (p5m4sp180.p31, waltz64.p61,p5m4sp180.p62). Set them up in the ARCHE-NOAH experiment.
 
 ;Across the sequence delays are named based on the modules they operate on.
 ;Use same number of CEST offsets for all experiments. Multiply the numbers of offsets by the number of modules used (2-5) to set up the 
-;number of points in the acquisition parameters. i.e. If you have a list of 40 offsets for all your experiments and 5 modules, type 40*5=200 points in the CEST dimension.
+;number of points in the acquisition parameters. i.e. If you have a list of 40 CEST offsets/frequencies for all your experiments and 5 modules, type 40*5=200 points in the CEST dimension.
 ;Added more comments for readability 
 
 ;FQ4list = Noffset
